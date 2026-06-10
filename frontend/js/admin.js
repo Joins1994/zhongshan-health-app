@@ -10,6 +10,7 @@ const AdminModule = {
     currentTab: 'admin-users',
     currentWorkFilter: 'pending',
     prizes: [], // 奖品列表缓存
+    adminPassword: 'admin123',
 
     init() {
         this.bindEvents();
@@ -95,7 +96,9 @@ const AdminModule = {
     // 加载用户列表
     async loadUsers() {
         try {
-            const res = await API.get('/api/admin/users');
+            const res = await fetch(API_BASE + '/api/admin/users', {
+                headers: { 'password': this.adminPassword }
+            }).then(r => r.json());
             if (res.success) {
                 this.renderUsers(res.data);
             } else {
@@ -131,7 +134,9 @@ const AdminModule = {
     // 加载作品列表
     async loadWorks() {
         try {
-            const res = await API.get(`/api/admin/works?status=${this.currentWorkFilter}`);
+            const res = await fetch(API_BASE + `/api/admin/works?status=${this.currentWorkFilter}`, {
+                headers: { 'password': this.adminPassword }
+            }).then(r => r.json());
             if (res.success) {
                 this.renderWorks(res.data);
             } else {
@@ -203,7 +208,11 @@ const AdminModule = {
     // 审核作品
     async approveWork(workId, status) {
         try {
-            const res = await API.post(`/api/admin/works/${workId}/approve`, { status });
+            const res = await fetch(API_BASE + `/api/admin/works/${workId}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'password': this.adminPassword },
+                body: JSON.stringify({ status })
+            }).then(r => r.json());
             if (res.success) {
                 Utils.showToast(status === 'approved' ? '已通过审核' : '已拒绝');
                 this.loadWorks();
@@ -220,10 +229,11 @@ const AdminModule = {
     async setPrize(workId, prizeLevel) {
         if (!prizeLevel) return;
         try {
-            const res = await API.post(`/api/admin/works/${workId}/approve`, {
-                status: 'approved',
-                prize_level: prizeLevel
-            });
+            const res = await fetch(API_BASE + `/api/admin/works/${workId}/approve`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'password': this.adminPassword },
+                body: JSON.stringify({ status: 'approved', prize_level: prizeLevel })
+            }).then(r => r.json());
             if (res.success) {
                 Utils.showToast('奖项设置成功');
             } else {
@@ -238,7 +248,9 @@ const AdminModule = {
     // 加载答题记录
     async loadQuizRecords() {
         try {
-            const res = await API.get('/api/admin/quiz-records');
+            const res = await fetch(API_BASE + '/api/admin/quiz-records', {
+                headers: { 'password': this.adminPassword }
+            }).then(r => r.json());
             if (res.success) {
                 this.renderQuizRecords(res.data);
             } else {
@@ -273,7 +285,9 @@ const AdminModule = {
     // 加载抽奖记录
     async loadLotteryRecords() {
         try {
-            const res = await API.get('/api/admin/lottery-records');
+            const res = await fetch(API_BASE + '/api/admin/lottery-records', {
+                headers: { 'password': this.adminPassword }
+            }).then(r => r.json());
             if (res.success) {
                 this.renderLotteryRecords(res.data);
             } else {
@@ -335,7 +349,11 @@ const AdminModule = {
         };
 
         try {
-            const res = await API.post('/api/admin/notices', payload);
+            const res = await fetch(API_BASE + '/api/admin/notices', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'password': this.adminPassword },
+                body: JSON.stringify(payload)
+            }).then(r => r.json());
             if (res.success) {
                 Utils.showToast('公告发布成功');
                 const form = document.getElementById('admin-notice-form');
@@ -379,7 +397,9 @@ const AdminModule = {
 
     async loadPrizes() {
         try {
-            const res = await API.get('/api/admin/prizes');
+            const res = await fetch(API_BASE + '/api/admin/prizes', {
+                headers: { 'password': this.adminPassword }
+            }).then(r => r.json());
             if (res.success) {
                 this.prizes = res.data;
                 this.savePrizesToStorage();
@@ -497,7 +517,11 @@ const AdminModule = {
 
         // 尝试同步到后端
         try {
-            await API.post('/api/admin/prizes', { prizes: this.prizes });
+            await fetch(API_BASE + '/api/admin/prizes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'password': this.adminPassword },
+                body: JSON.stringify({ prizes: this.prizes })
+            });
         } catch (e) {
             console.log('奖品数据已保存到本地');
         }
@@ -553,7 +577,11 @@ const AdminModule = {
 
         // 尝试同步到后端
         try {
-            await API.post('/api/admin/prizes', { prizes: this.prizes });
+            await fetch(API_BASE + '/api/admin/prizes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'password': this.adminPassword },
+                body: JSON.stringify({ prizes: this.prizes })
+            });
         } catch (e) {
             console.log('奖品数据已保存到本地');
         }

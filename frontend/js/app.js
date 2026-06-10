@@ -407,16 +407,21 @@ const AuthModule = {
     },
 
     async handleLogin() {
-        const username = document.getElementById('login-username').value.trim();
+        const phone = document.getElementById('login-phone').value.trim();
         const password = document.getElementById('login-password').value;
 
-        if (!username || !password) {
-            Utils.showToast('请输入用户名和密码');
+        if (!phone || !password) {
+            Utils.showToast('请输入手机号和密码');
+            return;
+        }
+
+        if (!Utils.isValidPhone(phone)) {
+            Utils.showToast('请输入正确的手机号');
             return;
         }
 
         try {
-            const res = await API.post('/api/auth/login', { username, password });
+            const res = await API.post('/api/users/login', { phone, password });
             if (res.success) {
                 AppState.user = res.data;
                 localStorage.setItem('health_app_user', JSON.stringify(res.data));
@@ -424,36 +429,29 @@ const AuthModule = {
                 this.hideAuthModal();
                 Utils.showToast('登录成功');
             } else {
-                Utils.showToast(res.message || '登录失败，请检查用户名和密码');
+                Utils.showToast(res.message || '登录失败，请检查手机号和密码');
             }
         } catch (e) {
             console.error('登录失败:', e);
-            // 离线模式：使用本地存储验证
-            this.offlineLogin(username, password);
-        }
-    },
-
-    offlineLogin(username, password) {
-        const users = JSON.parse(localStorage.getItem('health_app_users') || '[]');
-        const user = users.find(u => u.username === username && u.password === password);
-        if (user) {
-            AppState.user = { username: user.username, id: user.id };
-            localStorage.setItem('health_app_user', JSON.stringify(AppState.user));
-            this.updateUI();
-            this.hideAuthModal();
-            Utils.showToast('登录成功');
-        } else {
-            Utils.showToast('用户名或密码错误');
+            Utils.showToast('登录失败，请稍后重试');
         }
     },
 
     async handleRegister() {
-        const username = document.getElementById('register-username').value.trim();
+        const name = document.getElementById('register-name').value.trim();
+        const school = document.getElementById('register-school').value.trim();
+        const grade = document.getElementById('register-grade').value;
+        const phone = document.getElementById('register-phone').value.trim();
         const password = document.getElementById('register-password').value;
         const confirmPassword = document.getElementById('register-password-confirm').value;
 
-        if (!username || !password) {
+        if (!name || !school || !grade || !phone || !password) {
             Utils.showToast('请填写完整信息');
+            return;
+        }
+
+        if (!Utils.isValidPhone(phone)) {
+            Utils.showToast('请输入正确的手机号');
             return;
         }
 
@@ -468,39 +466,19 @@ const AuthModule = {
         }
 
         try {
-            const res = await API.post('/api/auth/register', { username, password });
+            const res = await API.post('/api/users/register', { name, school, grade, phone, password });
             if (res.success) {
                 Utils.showToast('注册成功，请登录');
                 // 切换到登录Tab
                 document.querySelector('.auth-tab[data-auth-tab="login"]').click();
-                document.getElementById('register-username').value = '';
-                document.getElementById('register-password').value = '';
-                document.getElementById('register-password-confirm').value = '';
+                document.getElementById('form-register').reset();
             } else {
                 Utils.showToast(res.message || '注册失败');
             }
         } catch (e) {
             console.error('注册失败:', e);
-            // 离线模式：本地存储
-            this.offlineRegister(username, password);
+            Utils.showToast('注册失败，请稍后重试');
         }
-    },
-
-    offlineRegister(username, password) {
-        const users = JSON.parse(localStorage.getItem('health_app_users') || '[]');
-        if (users.find(u => u.username === username)) {
-            Utils.showToast('用户名已存在');
-            return;
-        }
-        users.push({
-            id: Date.now(),
-            username,
-            password,
-            created_at: new Date().toISOString()
-        });
-        localStorage.setItem('health_app_users', JSON.stringify(users));
-        Utils.showToast('注册成功，请登录');
-        document.querySelector('.auth-tab[data-auth-tab="login"]').click();
     },
 
     logout() {
@@ -530,7 +508,7 @@ const AuthModule = {
         if (AppState.user) {
             if (authBtn) authBtn.style.display = 'none';
             if (userInfo) userInfo.style.display = 'flex';
-            if (displayUsername) displayUsername.textContent = AppState.user.username;
+            if (displayUsername) displayUsername.textContent = AppState.user.name || AppState.user.phone;
         } else {
             if (authBtn) authBtn.style.display = 'block';
             if (userInfo) userInfo.style.display = 'none';
