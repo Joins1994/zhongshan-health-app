@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  health-app:
+    build: .
+    container_name: zhongshan-health-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/backend/data
+      - ./uploads:/app/backend/uploads
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
