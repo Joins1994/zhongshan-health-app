@@ -2241,3 +2241,317 @@ input, select, textarea, button {
     cursor: pointer;
     border: none;
 }
+
+/* 增强版管理后台入口按钮 */
+.admin-entry-enhanced {
+    width: auto;
+    height: auto;
+    padding: 10px 16px;
+    border-radius: 25px;
+    flex-direction: row;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    animation: pulse 2s ease infinite;
+}
+
+.admin-entry-enhanced i {
+    font-size: 1rem;
+}
+
+.admin-entry-enhanced span {
+    white-space: nowrap;
+}
+
+/* === 首页Header登录区域 === */
+.header-auth {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-auth {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1.5px solid rgba(255,255,255,0.4);
+    border-radius: 25px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    backdrop-filter: blur(10px);
+}
+
+.btn-auth:active {
+    transform: scale(0.96);
+    background: rgba(255,255,255,0.3);
+}
+
+.btn-logout {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.3);
+}
+
+.user-greeting {
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* === 登录/注册模态框 === */
+.modal-auth-content {
+    max-width: 380px;
+    position: relative;
+    padding: 24px;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--bg);
+    border-radius: 50%;
+    color: var(--text-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.modal-close-btn:active {
+    background: var(--border);
+}
+
+.auth-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+}
+
+.auth-tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s;
+}
+
+.auth-tab.active {
+    background: white;
+    color: var(--primary);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.auth-form .form-group {
+    margin-bottom: 14px;
+    text-align: left;
+}
+
+.auth-form .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+}
+
+.auth-form .form-group input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    transition: border-color 0.3s;
+    background: var(--bg);
+}
+
+.auth-form .form-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(76,175,80,0.1);
+}
+
+/* === 管理后台密码弹窗 === */
+.modal-auth-content .modal-icon {
+    font-size: 3rem;
+    margin-bottom: 8px;
+    color: var(--primary);
+}
+
+.modal-btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.modal-btn-row .btn-primary,
+.modal-btn-row .btn-secondary {
+    flex: 1;
+}
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: var(--bg);
+    color: var(--text-light);
+    border: 1.5px solid var(--border);
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-secondary:active {
+    transform: scale(0.96);
+    background: var(--border);
+}
+
+/* === 底部导航管理项 === */
+.nav-item-admin {
+    color: var(--text-muted);
+}
+
+.nav-item-admin i {
+    font-size: 1.1rem;
+}
+
+/* === 奖品配置样式 === */
+.form-actions-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.form-actions-row .btn-primary {
+    flex: 1;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+}
+
+.form-actions-row .btn-secondary {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+}
+
+.prize-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.prize-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    border-left: 4px solid var(--primary);
+    transition: all 0.2s;
+}
+
+.prize-item:active {
+    transform: scale(0.98);
+}
+
+.prize-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.prize-item-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+}
+
+.prize-item-detail {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.prize-detail-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.prize-detail-tag i {
+    color: var(--primary);
+    font-size: 0.7rem;
+}
+
+.prize-item-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.btn-prize-edit,
+.btn-prize-delete {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-prize-edit {
+    background: #E3F2FD;
+    color: var(--secondary);
+}
+
+.btn-prize-edit:active {
+    background: #BBDEFB;
+}
+
+.btn-prize-delete {
+    background: #FFEBEE;
+    color: var(--danger);
+}
+
+.btn-prize-delete:active {
+    background: #FFCDD2;
+}

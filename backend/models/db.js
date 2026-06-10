@@ -32,7 +32,8 @@ function initTables() {
                 name TEXT NOT NULL,
                 school TEXT NOT NULL,
                 grade TEXT NOT NULL,
-                phone TEXT NOT NULL,
+                phone TEXT NOT NULL UNIQUE,
+                password TEXT,
                 score INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )`);
@@ -101,6 +102,15 @@ function initTables() {
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id),
                 UNIQUE(user_id, day)
+            )`);
+
+            // 奖品配置表
+            db.run(`CREATE TABLE IF NOT EXISTS prizes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                probability REAL NOT NULL,
+                stock INTEGER DEFAULT -1,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )`);
 
             // 公告表
@@ -195,9 +205,34 @@ function initNotices() {
     });
 }
 
+// 插入默认奖品配置
+function initPrizes() {
+    return new Promise((resolve, reject) => {
+        db.get('SELECT COUNT(*) as count FROM prizes', (err, row) => {
+            if (err) return reject(err);
+            if (row.count > 0) return resolve();
+
+            const prizes = [
+                ['一等奖 - 运动手表一块', 2, 5],
+                ['二等奖 - 精美文具套装', 8, 20],
+                ['三等奖 - 健康知识手册', 20, 50],
+                ['参与奖 - 健康贴纸一套', 35, -1],
+                ['谢谢参与', 35, -1]
+            ];
+
+            const stmt = db.prepare('INSERT INTO prizes (name, probability, stock) VALUES (?, ?, ?)');
+            prizes.forEach(p => stmt.run(p));
+            stmt.finalize();
+            console.log(`已插入 ${prizes.length} 条默认奖品配置`);
+            resolve();
+        });
+    });
+}
+
 module.exports = {
     db,
     initTables,
     initQuestions,
-    initNotices
+    initNotices,
+    initPrizes
 };

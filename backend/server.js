@@ -3,7 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 
-const { initTables, initQuestions, initNotices } = require('./models/db');
+const { initTables, initQuestions, initNotices, initPrizes } = require('./models/db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -48,6 +48,7 @@ async function start() {
     await initTables();
     await initQuestions();
     await initNotices();
+    await initPrizes();
 
     app.listen(PORT, () => {
         console.log(`=================================`);

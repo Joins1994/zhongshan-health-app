@@ -38,6 +38,7 @@ const API = {
 const AppState = {
     currentPage: 'home',
     user: null, // 从后端获取
+    adminAuthenticated: false, // 管理后台是否已验证密码
     challenge: {
         completedDays: [],
         streak: 0,
@@ -278,15 +279,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof ChallengeModule !== 'undefined') ChallengeModule.init();
     if (typeof AdminModule !== 'undefined') AdminModule.init();
 
-    // 添加管理后台入口按钮
+    // 添加管理后台入口按钮（保留浮动按钮作为辅助入口）
     const adminBtn = document.createElement('button');
-    adminBtn.className = 'admin-entry';
-    adminBtn.innerHTML = '<i class="fas fa-cog"></i>';
+    adminBtn.className = 'admin-entry admin-entry-enhanced';
+    adminBtn.innerHTML = '<i class="fas fa-cog"></i><span>管理后台</span>';
     adminBtn.title = '管理后台';
     adminBtn.addEventListener('click', () => {
-        Router.navigate('admin');
+        AdminAccess.requestAccess();
     });
     document.body.appendChild(adminBtn);
+
+    // 初始化用户认证模块
+    AuthModule.init();
+    // 初始化管理后台访问控制
+    AdminAccess.init();
 
     Router.on('pageEnter', (page) => {
         // 管理后台按钮显示/隐藏
@@ -314,3 +320,308 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+// ============================================
+// 用户认证模块
+// ============================================
+const AuthModule = {
+    init() {
+        // 恢复登录状态
+        this.restoreSession();
+
+        // 登录/注册按钮触发
+        const loginTrigger = document.getElementById('btn-login-trigger');
+        if (loginTrigger) {
+            loginTrigger.addEventListener('click', () => {
+                this.showAuthModal();
+            });
+        }
+
+        // 退出按钮
+        const logoutBtn = document.getElementById('btn-logout');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                this.logout();
+            });
+        }
+
+        // 关闭模态框
+        const closeBtn = document.getElementById('modal-auth-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                this.hideAuthModal();
+            });
+        }
+
+        // 点击遮罩关闭
+        const modal = document.getElementById('modal-auth');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) this.hideAuthModal();
+            });
+        }
+
+        // 登录/注册Tab切换
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const target = tab.dataset.authTab;
+                document.getElementById('form-login').style.display = target === 'login' ? 'block' : 'none';
+                document.getElementById('form-register').style.display = target === 'register' ? 'block' : 'none';
+            });
+        });
+
+        // 登录表单提交
+        const loginForm = document.getElementById('form-login');
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleLogin();
+            });
+        }
+
+        // 注册表单提交
+        const registerForm = document.getElementById('form-register');
+        if (registerForm) {
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleRegister();
+            });
+        }
+    },
+
+    showAuthModal() {
+        const modal = document.getElementById('modal-auth');
+        if (modal) modal.style.display = 'flex';
+    },
+
+    hideAuthModal() {
+        const modal = document.getElementById('modal-auth');
+        if (modal) modal.style.display = 'none';
+        // 重置表单
+        const loginForm = document.getElementById('form-login');
+        const registerForm = document.getElementById('form-register');
+        if (loginForm) loginForm.reset();
+        if (registerForm) registerForm.reset();
+    },
+
+    async handleLogin() {
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+
+        if (!username || !password) {
+            Utils.showToast('请输入用户名和密码');
+            return;
+        }
+
+        try {
+            const res = await API.post('/api/auth/login', { username, password });
+            if (res.success) {
+                AppState.user = res.data;
+                localStorage.setItem('health_app_user', JSON.stringify(res.data));
+                this.updateUI();
+                this.hideAuthModal();
+                Utils.showToast('登录成功');
+            } else {
+                Utils.showToast(res.message || '登录失败，请检查用户名和密码');
+            }
+        } catch (e) {
+            console.error('登录失败:', e);
+            // 离线模式：使用本地存储验证
+            this.offlineLogin(username, password);
+        }
+    },
+
+    offlineLogin(username, password) {
+        const users = JSON.parse(localStorage.getItem('health_app_users') || '[]');
+        const user = users.find(u => u.username === username && u.password === password);
+        if (user) {
+            AppState.user = { username: user.username, id: user.id };
+            localStorage.setItem('health_app_user', JSON.stringify(AppState.user));
+            this.updateUI();
+            this.hideAuthModal();
+            Utils.showToast('登录成功');
+        } else {
+            Utils.showToast('用户名或密码错误');
+        }
+    },
+
+    async handleRegister() {
+        const username = document.getElementById('register-username').value.trim();
+        const password = document.getElementById('register-password').value;
+        const confirmPassword = document.getElementById('register-password-confirm').value;
+
+        if (!username || !password) {
+            Utils.showToast('请填写完整信息');
+            return;
+        }
+
+        if (password.length < 6) {
+            Utils.showToast('密码至少6位');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            Utils.showToast('两次密码输入不一致');
+            return;
+        }
+
+        try {
+            const res = await API.post('/api/auth/register', { username, password });
+            if (res.success) {
+                Utils.showToast('注册成功，请登录');
+                // 切换到登录Tab
+                document.querySelector('.auth-tab[data-auth-tab="login"]').click();
+                document.getElementById('register-username').value = '';
+                document.getElementById('register-password').value = '';
+                document.getElementById('register-password-confirm').value = '';
+            } else {
+                Utils.showToast(res.message || '注册失败');
+            }
+        } catch (e) {
+            console.error('注册失败:', e);
+            // 离线模式：本地存储
+            this.offlineRegister(username, password);
+        }
+    },
+
+    offlineRegister(username, password) {
+        const users = JSON.parse(localStorage.getItem('health_app_users') || '[]');
+        if (users.find(u => u.username === username)) {
+            Utils.showToast('用户名已存在');
+            return;
+        }
+        users.push({
+            id: Date.now(),
+            username,
+            password,
+            created_at: new Date().toISOString()
+        });
+        localStorage.setItem('health_app_users', JSON.stringify(users));
+        Utils.showToast('注册成功，请登录');
+        document.querySelector('.auth-tab[data-auth-tab="login"]').click();
+    },
+
+    logout() {
+        AppState.user = null;
+        localStorage.removeItem('health_app_user');
+        this.updateUI();
+        Utils.showToast('已退出登录');
+    },
+
+    restoreSession() {
+        try {
+            const saved = localStorage.getItem('health_app_user');
+            if (saved) {
+                AppState.user = JSON.parse(saved);
+                this.updateUI();
+            }
+        } catch (e) {
+            localStorage.removeItem('health_app_user');
+        }
+    },
+
+    updateUI() {
+        const authBtn = document.getElementById('header-auth');
+        const userInfo = document.getElementById('header-user-info');
+        const displayUsername = document.getElementById('display-username');
+
+        if (AppState.user) {
+            if (authBtn) authBtn.style.display = 'none';
+            if (userInfo) userInfo.style.display = 'flex';
+            if (displayUsername) displayUsername.textContent = AppState.user.username;
+        } else {
+            if (authBtn) authBtn.style.display = 'block';
+            if (userInfo) userInfo.style.display = 'none';
+        }
+    }
+};
+
+// ============================================
+// 管理后台访问控制
+// ============================================
+const AdminAccess = {
+    ADMIN_PASSWORD: 'admin123',
+
+    init() {
+        // 底部导航"管理"按钮
+        const navAdmin = document.getElementById('nav-admin');
+        if (navAdmin) {
+            navAdmin.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.requestAccess();
+            });
+        }
+
+        // 密码弹窗取消按钮
+        const cancelBtn = document.getElementById('btn-admin-cancel');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                this.hidePasswordModal();
+            });
+        }
+
+        // 密码弹窗表单提交
+        const passwordForm = document.getElementById('form-admin-password');
+        if (passwordForm) {
+            passwordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.verifyPassword();
+            });
+        }
+
+        // 点击遮罩关闭
+        const modal = document.getElementById('modal-admin-password');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) this.hidePasswordModal();
+            });
+        }
+    },
+
+    requestAccess() {
+        if (AppState.adminAuthenticated) {
+            Router.navigate('admin');
+            return;
+        }
+        this.showPasswordModal();
+    },
+
+    showPasswordModal() {
+        const modal = document.getElementById('modal-admin-password');
+        if (modal) {
+            modal.style.display = 'flex';
+            const input = document.getElementById('admin-password-input');
+            if (input) {
+                input.value = '';
+                setTimeout(() => input.focus(), 100);
+            }
+        }
+    },
+
+    hidePasswordModal() {
+        const modal = document.getElementById('modal-admin-password');
+        if (modal) modal.style.display = 'none';
+        const input = document.getElementById('admin-password-input');
+        if (input) input.value = '';
+    },
+
+    verifyPassword() {
+        const input = document.getElementById('admin-password-input');
+        const password = input ? input.value : '';
+
+        if (password === this.ADMIN_PASSWORD) {
+            AppState.adminAuthenticated = true;
+            this.hidePasswordModal();
+            Router.navigate('admin');
+            Utils.showToast('验证成功');
+        } else {
+            Utils.showToast('密码错误');
+            if (input) {
+                input.value = '';
+                input.focus();
+            }
+        }
+    }
+};

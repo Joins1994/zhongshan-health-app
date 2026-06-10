@@ -53,41 +53,77 @@ router.post('/submit', (req, res) => {
     );
 });
 
-// 抽奖
+// 获取奖品配置
+router.get('/prizes', (req, res) => {
+    db.all('SELECT * FROM prizes ORDER BY probability ASC', (err, rows) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: '获取奖品配置失败' });
+        }
+        res.json({ success: true, data: rows });
+    });
+});
+
+// 抽奖（从 prizes 表读取配置）
 router.post('/lottery', (req, res) => {
     const { user_id } = req.body;
 
-    const prizes = [
-        { level: '一等奖', desc: '运动手表一块', weight: 2 },
-        { level: '二等奖', desc: '精美文具套装', weight: 8 },
-        { level: '三等奖', desc: '健康知识手册', weight: 20 },
-        { level: '参与奖', desc: '健康贴纸一套', weight: 35 },
-        { level: '谢谢参与', desc: '下次一定中奖！', weight: 35 }
-    ];
-
-    const totalWeight = prizes.reduce((sum, p) => sum + p.weight, 0);
-    let random = Math.random() * totalWeight;
-    let selected = prizes[prizes.length - 1];
-
-    for (const prize of prizes) {
-        random -= prize.weight;
-        if (random <= 0) {
-            selected = prize;
-            break;
-        }
+    if (!user_id) {
+        return res.status(400).json({ success: false, message: '缺少用户ID' });
     }
 
-    // 保存抽奖记录
-    db.run(
-        'INSERT INTO lottery_records (user_id, prize_level, prize_desc) VALUES (?, ?, ?)',
-        [user_id, selected.level, selected.desc],
-        function(err) {
-            if (err) {
-                return res.status(500).json({ success: false, message: '保存抽奖记录失败' });
-            }
-            res.json({ success: true, data: selected });
+    // 从 prizes 表读取配置
+    db.all('SELECT * FROM prizes WHERE stock > 0 OR stock = -1 ORDER BY id ASC', (err, rows) => {
+        if (err) {
+            return res.status(500).json({ success: false, message: '获取奖品配置失败' });
         }
-    );
+
+        if (!rows || rows.length === 0) {
+            return res.status(500).json({ success: false, message: '暂无可用奖品配置' });
+        }
+
+        // 构建抽奖池（排除库存为0的奖品）
+        const availablePrizes = rows.filter(p => p.stock !== 0);
+        if (availablePrizes.length === 0) {
+            return res.json({ success: true, data: { level: '已抽完', desc: '奖品已全部抽完，请等待补充' } });
+        }
+
+        const totalProbability = availablePrizes.reduce((sum, p) => sum + p.probability, 0);
+        let random = Math.random() * totalProbability;
+        let selected = availablePrizes[availablePrizes.length - 1];
+
+        for (const prize of availablePrizes) {
+            random -= prize.probability;
+            if (random <= 0) {
+                selected = prize;
+                break;
+            }
+        }
+
+        // 如果奖品有库存限制且不为 -1（无限），则扣减库存
+        if (selected.stock > 0) {
+            db.run('UPDATE prizes SET stock = stock - 1 WHERE id = ?', [selected.id]);
+        }
+
+        // 保存抽奖记录
+        db.run(
+            'INSERT INTO lottery_records (user_id, prize_level, prize_desc) VALUES (?, ?, ?)',
+            [user_id, selected.name, selected.name],
+            function(err) {
+                if (err) {
+                    return res.status(500).json({ success: false, message: '保存抽奖记录失败' });
+                }
+                res.json({
+                    success: true,
+                    data: {
+                        id: selected.id,
+                        level: selected.name,
+                        desc: selected.name,
+                        probability: selected.probability
+                    }
+                });
+            }
+        );
+    });
 });
 
 // 获取用户答题记录

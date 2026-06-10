@@ -19,6 +19,18 @@
                     <h1>中山市中小学生<br>健康宣传互动平台</h1>
                     <p class="subtitle">中山市保健所 · 守护健康成长</p>
                 </div>
+                <!-- 登录/注册按钮 -->
+                <div class="header-auth" id="header-auth">
+                    <button class="btn-auth" id="btn-login-trigger">
+                        <i class="fas fa-user"></i> 登录/注册
+                    </button>
+                </div>
+                <div class="header-auth" id="header-user-info" style="display:none;">
+                    <span class="user-greeting"><i class="fas fa-user-circle"></i> <span id="display-username"></span></span>
+                    <button class="btn-auth btn-logout" id="btn-logout">
+                        <i class="fas fa-sign-out-alt"></i> 退出
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -613,6 +625,10 @@
             <i class="fas fa-flag-checkered"></i>
             <span>打卡</span>
         </a>
+        <a href="#admin" class="nav-item nav-item-admin" data-page="admin" id="nav-admin">
+            <i class="fas fa-cog"></i>
+            <span>管理</span>
+        </a>
     </nav>
 
     <!-- Toast 提示 -->
@@ -631,6 +647,7 @@
             <button class="tab-btn" data-tab="admin-quiz">答题记录</button>
             <button class="tab-btn" data-tab="admin-lottery">抽奖记录</button>
             <button class="tab-btn" data-tab="admin-notice">发布公告</button>
+            <button class="tab-btn" data-tab="admin-prizes">奖品配置</button>
         </div>
 
         <!-- 用户管理 -->
@@ -718,10 +735,107 @@
                 </form>
             </div>
         </div>
+
+        <!-- 奖品配置 -->
+        <div id="admin-prizes" class="tab-content page-body" style="display:none;">
+            <div class="admin-card">
+                <h3><i class="fas fa-gift"></i> 奖品配置</h3>
+                <form class="admin-form" id="admin-prize-form">
+                    <div class="form-group">
+                        <label>奖品名称 <span class="required">*</span></label>
+                        <input type="text" id="prize-name" placeholder="如：一等奖、二等奖" required>
+                    </div>
+                    <div class="form-group">
+                        <label>中奖概率（%） <span class="required">*</span></label>
+                        <input type="number" id="prize-probability" min="0" max="100" step="0.1" placeholder="如：5 表示5%" required>
+                    </div>
+                    <div class="form-group">
+                        <label>库存数量 <span class="required">*</span></label>
+                        <input type="number" id="prize-stock" min="0" placeholder="如：10" required>
+                    </div>
+                    <input type="hidden" id="prize-edit-id" value="">
+                    <div class="form-actions-row">
+                        <button type="submit" class="btn-primary" id="btn-add-prize">
+                            <i class="fas fa-plus"></i> 添加奖品
+                        </button>
+                        <button type="button" class="btn-secondary" id="btn-cancel-prize" style="display:none;">
+                            <i class="fas fa-times"></i> 取消编辑
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="admin-card">
+                <h3><i class="fas fa-list"></i> 当前奖品列表</h3>
+                <div id="prize-list" class="prize-list">
+                    <div class="admin-empty"><i class="fas fa-inbox"></i><p>暂无奖品配置</p></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Toast 提示 -->
     <div class="toast" id="toast"></div>
+
+    <!-- ========== 登录/注册模态框 ========== -->
+    <div class="modal-overlay" id="modal-auth" style="display:none;">
+        <div class="modal-content modal-auth-content">
+            <button class="modal-close-btn" id="modal-auth-close"><i class="fas fa-times"></i></button>
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-auth-tab="login">登录</button>
+                <button class="auth-tab" data-auth-tab="register">注册</button>
+            </div>
+            <!-- 登录表单 -->
+            <form class="auth-form" id="form-login">
+                <div class="form-group">
+                    <label>用户名 <span class="required">*</span></label>
+                    <input type="text" id="login-username" placeholder="请输入用户名" required>
+                </div>
+                <div class="form-group">
+                    <label>密码 <span class="required">*</span></label>
+                    <input type="password" id="login-password" placeholder="请输入密码" required>
+                </div>
+                <button type="submit" class="btn-primary btn-lg btn-block">
+                    <i class="fas fa-sign-in-alt"></i> 登录
+                </button>
+            </form>
+            <!-- 注册表单 -->
+            <form class="auth-form" id="form-register" style="display:none;">
+                <div class="form-group">
+                    <label>用户名 <span class="required">*</span></label>
+                    <input type="text" id="register-username" placeholder="请输入用户名" required>
+                </div>
+                <div class="form-group">
+                    <label>密码 <span class="required">*</span></label>
+                    <input type="password" id="register-password" placeholder="请输入密码（至少6位）" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>确认密码 <span class="required">*</span></label>
+                    <input type="password" id="register-password-confirm" placeholder="请再次输入密码" required>
+                </div>
+                <button type="submit" class="btn-primary btn-lg btn-block">
+                    <i class="fas fa-user-plus"></i> 注册
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== 管理后台密码弹窗 ========== -->
+    <div class="modal-overlay" id="modal-admin-password" style="display:none;">
+        <div class="modal-content modal-auth-content">
+            <div class="modal-icon"><i class="fas fa-lock"></i></div>
+            <h3>管理后台验证</h3>
+            <p>请输入管理密码以进入后台</p>
+            <form id="form-admin-password">
+                <div class="form-group">
+                    <input type="password" id="admin-password-input" placeholder="请输入管理密码" required>
+                </div>
+                <div class="modal-btn-row">
+                    <button type="button" class="btn-secondary" id="btn-admin-cancel">取消</button>
+                    <button type="submit" class="btn-primary"><i class="fas fa-unlock"></i> 验证</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- JavaScript -->
     <script src="js/api.js"></script>

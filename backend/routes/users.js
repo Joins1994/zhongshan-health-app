@@ -1,23 +1,37 @@
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 const { db } = require('../models/db');
 
-// 用户注册/登录（简化版，实际应接入微信OAuth）
-router.post('/register', (req, res) => {
-    const { name, school, grade, phone } = req.body;
+// 简单密码哈希
+function hashPassword(password) {
+    return crypto.createHash('sha256').update(password).digest('hex');
+}
 
-    if (!name || !school || !grade || !phone) {
-        return res.status(400).json({ success: false, message: '请填写完整信息' });
+// 用户注册（带密码）
+router.post('/register', (req, res) => {
+    const { name, school, grade, phone, password } = req.body;
+
+    if (!name || !school || !grade || !phone || !password) {
+        return res.status(400).json({ success: false, message: '请填写完整信息（姓名、学校、年级、手机号、密码）' });
+    }
+
+    if (password.length < 6) {
+        return res.status(400).json({ success: false, message: '密码长度不能少于6位' });
     }
 
     // 生成模拟 openid
     const openid = 'user_' + Date.now();
+    const hashedPassword = hashPassword(password);
 
     db.run(
-        'INSERT INTO users (openid, name, school, grade, phone) VALUES (?, ?, ?, ?, ?)',
-        [openid, name, school, grade, phone],
+        'INSERT INTO users (openid, name, school, grade, phone, password) VALUES (?, ?, ?, ?, ?, ?)',
+        [openid, name, school, grade, phone, hashedPassword],
         function(err) {
             if (err) {
+                if (err.message.includes('UNIQUE')) {
+                    return res.status(400).json({ success: false, message: '该手机号已注册' });
+                }
                 return res.status(500).json({ success: false, message: '注册失败' });
             }
             res.json({
@@ -31,6 +45,33 @@ router.post('/register', (req, res) => {
                     phone,
                     score: 0
                 }
+            });
+        }
+    );
+});
+
+// 用户登录（手机号+密码）
+router.post('/login', (req, res) => {
+    const { phone, password } = req.body;
+
+    if (!phone || !password) {
+        return res.status(400).json({ success: false, message: '请输入手机号和密码' });
+    }
+
+    const hashedPassword = hashPassword(password);
+
+    db.get('SELECT id, openid, name, school, grade, phone, score, created_at FROM users WHERE phone = ? AND password = ?',
+        [phone, hashedPassword],
+        (err, row) => {
+            if (err) {
+                return res.status(500).json({ success: false, message: '登录失败' });
+            }
+            if (!row) {
+                return res.status(401).json({ success: false, message: '手机号或密码错误' });
+            }
+            res.json({
+                success: true,
+                data: row
             });
         }
     );
