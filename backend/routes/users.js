@@ -12,17 +12,21 @@ function hashPassword(password) {
 router.post('/register', (req, res) => {
     const { name, school, grade, phone, password } = req.body;
 
-    if (!name || !school || !grade || !phone || !password) {
-        return res.status(400).json({ success: false, message: '请填写完整信息（姓名、学校、年级、手机号、密码）' });
+    if (!name || !school || !grade || !phone) {
+        return res.status(400).json({ success: false, message: '请填写完整信息（姓名、学校、年级、手机号）' });
     }
 
-    if (password.length < 6) {
-        return res.status(400).json({ success: false, message: '密码长度不能少于6位' });
+    // 如果有密码，验证长度
+    let hashedPassword = null;
+    if (password) {
+        if (password.length < 6) {
+            return res.status(400).json({ success: false, message: '密码长度不能少于6位' });
+        }
+        hashedPassword = hashPassword(password);
     }
 
     // 生成模拟 openid
     const openid = 'user_' + Date.now();
-    const hashedPassword = hashPassword(password);
 
     db.run(
         'INSERT INTO users (openid, name, school, grade, phone, password) VALUES (?, ?, ?, ?, ?, ?)',
