@@ -477,7 +477,7 @@ const AuthModule = {
             }
         } catch (e) {
             console.error('注册失败:', e);
-            Utils.showToast('注册失败，请稍后重试');
+            Utils.showToast('网络错误，请检查服务器是否运行');
         }
     },
 
