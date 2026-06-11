@@ -192,15 +192,35 @@ const WorksModule = {
     },
 
     async submitWork() {
-        const title = document.getElementById('work-title').value.trim();
-        const type = document.getElementById('work-type').value;
-        const author = document.getElementById('work-author').value.trim();
-        const school = document.getElementById('work-school').value.trim();
-        const className = document.getElementById('work-class').value.trim();
-        const desc = document.getElementById('work-desc').value.trim();
-        const phone = document.getElementById('work-phone').value.trim();
-        const agree = document.getElementById('work-agree').checked;
+        console.log('submitWork called');
+        
+        const titleEl = document.getElementById('work-title');
+        const typeEl = document.getElementById('work-type');
+        const authorEl = document.getElementById('work-author');
+        const schoolEl = document.getElementById('work-school');
+        const classEl = document.getElementById('work-class');
+        const descEl = document.getElementById('work-desc');
+        const phoneEl = document.getElementById('work-phone');
+        const agreeEl = document.getElementById('work-agree');
         const fileInput = document.getElementById('work-file');
+        
+        // 检查元素是否存在
+        if (!titleEl || !typeEl || !authorEl || !schoolEl || !classEl || !descEl || !phoneEl || !agreeEl) {
+            console.error('Form elements not found:', { titleEl, typeEl, authorEl, schoolEl, classEl, descEl, phoneEl, agreeEl });
+            Utils.showToast('表单加载错误，请刷新页面重试');
+            return;
+        }
+        
+        const title = titleEl.value.trim();
+        const type = typeEl.value;
+        const author = authorEl.value.trim();
+        const school = schoolEl.value.trim();
+        const className = classEl.value.trim();
+        const desc = descEl.value.trim();
+        const phone = phoneEl.value.trim();
+        const agree = agreeEl.checked;
+
+        console.log('Form values:', { title, type, author, school, className, desc: desc.substring(0, 20), phone, agree });
 
         if (!title) { Utils.showToast('请输入作品标题'); return; }
         if (!type) { Utils.showToast('请选择作品类型'); return; }
@@ -220,12 +240,15 @@ const WorksModule = {
         formData.append('class', className);
         formData.append('description', desc);
         formData.append('phone', phone);
-        if (fileInput.files[0]) {
+        if (fileInput && fileInput.files[0]) {
             formData.append('file', fileInput.files[0]);
         }
 
+        console.log('Submitting form...');
+        
         try {
             const res = await API.postForm('/api/works', formData);
+            console.log('Response:', res);
             if (res.success) {
                 Utils.showToast('作品提交成功！审核通过后将展示在作品墙');
                 document.getElementById('submit-form').reset();
@@ -245,6 +268,7 @@ const WorksModule = {
                 Utils.showToast(res.message || '提交失败');
             }
         } catch (e) {
+            console.error('Submit error:', e);
             Utils.showToast('网络错误，请稍后重试');
         }
     }
